@@ -3,6 +3,7 @@ package main
 import (
 	"sync"
 	"time"
+  "sort"
 )
 
 type NSinfo struct {
@@ -14,6 +15,8 @@ type NSinfo struct {
 	ErrorsValidation int
 	ID               int64
 	rtt              []time.Duration
+  rtt95            time.Duration
+  rttMed           time.Duration
 	rttAvg           time.Duration
 	rttMin           time.Duration
 	rttMax           time.Duration
@@ -45,6 +48,7 @@ func nsStoreGetMeasurement(nsStore nsInfoMap, ipAddr string) NSinfo {
 	var total time.Duration = 0
 	var min time.Duration = 10000000
 	var max time.Duration = 0
+  var ms []int64
 	for _, value := range entry.rtt {
 		// check for new min record
 		if value < min {
@@ -56,7 +60,15 @@ func nsStoreGetMeasurement(nsStore nsInfoMap, ipAddr string) NSinfo {
 		}
 		// add for total time
 		total += value
+    ms = append(ms,value.Microseconds()*1000)
 	}
+
+  sort.Slice(ms, func(i,j int) bool { return ms[i]<ms[j] })
+  var i95 int = int(float64(len(ms))*.95)
+  var i50 int = int(float64(len(ms))/2)
+
+  nsMeasurement.rtt95  = time.Duration(ms[i95])
+  nsMeasurement.rttMed = time.Duration(ms[i50])
 	nsMeasurement.rttAvg = total / time.Duration(len(entry.rtt))
 	nsMeasurement.rttMin = min
 	nsMeasurement.rttMax = max

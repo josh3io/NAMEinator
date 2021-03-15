@@ -82,12 +82,14 @@ func processResults(nsStore nsInfoMap) []NSinfo {
 	var nsStoreSorted []NSinfo
 	for _, entry := range nsStore.ns {
 		nsResults := nsStoreGetMeasurement(nsStore, entry.IPAddr)
+    entry.rtt95  = nsResults.rtt95
+    entry.rttMed = nsResults.rttMed
 		entry.rttAvg = nsResults.rttAvg
 		entry.rttMin = nsResults.rttMin
 		entry.rttMax = nsResults.rttMax
-		entry.ID = int64(nsResults.rttAvg)
+		entry.ID = int64(nsResults.rtt95)
 		nsStore.ns[entry.IPAddr] = entry
-		nsStoreSorted = append(nsStoreSorted, NSinfo{entry.IPAddr, entry.Name, entry.Country, entry.Count, entry.ErrorsConnection, entry.ErrorsValidation, entry.ID, entry.rtt, entry.rttAvg, entry.rttMin, entry.rttMax})
+		nsStoreSorted = append(nsStoreSorted, NSinfo{entry.IPAddr, entry.Name, entry.Country, entry.Count, entry.ErrorsConnection, entry.ErrorsValidation, entry.ID, entry.rtt, entry.rtt95, entry.rttMed, entry.rttAvg, entry.rttMin, entry.rttMax})
 	}
 	sort.Slice(nsStoreSorted, func(i, j int) bool {
 		return nsStoreSorted[i].ID < nsStoreSorted[j].ID
@@ -103,7 +105,7 @@ func printResults(nsStore nsInfoMap, nsStoreSorted []NSinfo) {
 	for _, nameserver := range nsStoreSorted {
 		fmt.Println("")
 		fmt.Println(nameserver.IPAddr + ": ")
-		fmt.Printf("Avg. [%v], Min. [%v], Max. [%v] ", nameserver.rttAvg, nameserver.rttMin, nameserver.rttMax)
+		fmt.Printf("95th [%v], Med. [%v], Avg. [%v], Min. [%v], Max. [%v] ", nameserver.rtt95, nameserver.rttMed, nameserver.rttAvg, nameserver.rttMin, nameserver.rttMax)
 		if appConfiguration.debug {
 			fmt.Println(nsStoreGetRecord(nsStore, nameserver.IPAddr))
 		}
