@@ -40,7 +40,7 @@ func processFlags() {
 	flagContest := flag.Bool("contest", true, "contest=true/false : enable or disable a contest against your locally configured DNS server (default true)")
 	flagDebug := flag.Bool("debug", false, "debug=true/false : enable or disable debugging (default false)")
   flagFullPercentilesTable := flag.Bool("percentiles", false, "percentiles=true/false : show percentiles table")
-  flagSort := flag.String("sort", "median", "sort=(min|max|avg|median)")
+  flagSort := flag.String("sort", "avg", "sort=(min|max|avg|median)")
 	flag.Parse()
 	appConfigstruct.numberOfDomains = *flagNumberOfDomains
 	appConfigstruct.debug = *flagDebug
