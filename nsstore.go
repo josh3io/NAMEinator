@@ -15,11 +15,10 @@ type NSinfo struct {
 	ErrorsValidation int
 	ID               int64
 	rtt              []time.Duration
-  rtt95            time.Duration
-  rttMed           time.Duration
 	rttAvg           time.Duration
 	rttMin           time.Duration
 	rttMax           time.Duration
+  percentiles      map[int]time.Duration
 }
 
 type nsInfoMap struct {
@@ -41,6 +40,7 @@ func nsStoreGetRecord(nsStore nsInfoMap, ipAddr string) NSinfo {
 // Get nameserver average time
 func nsStoreGetMeasurement(nsStore nsInfoMap, ipAddr string) NSinfo {
 	var nsMeasurement = NSinfo{}
+  nsMeasurement.percentiles = make(map[int]time.Duration)
 	entry, found := nsStore.ns[ipAddr]
 	if !found {
 		entry.IPAddr = ipAddr
@@ -64,14 +64,14 @@ func nsStoreGetMeasurement(nsStore nsInfoMap, ipAddr string) NSinfo {
 	}
 
   sort.Slice(ms, func(i,j int) bool { return ms[i]<ms[j] })
-  var i95 int = int(float64(len(ms))*.95)
-  var i50 int = int(float64(len(ms))/2)
+  for _,v := range([]int{0,10,25,50,75,90,95,99}) {
+    var pctile int = int(float64(len(ms))* float64(v)/100)
+    nsMeasurement.percentiles[v] = time.Duration(ms[pctile])
+  }
 
-  nsMeasurement.rtt95  = time.Duration(ms[i95])
-  nsMeasurement.rttMed = time.Duration(ms[i50])
-	nsMeasurement.rttAvg = total / time.Duration(len(entry.rtt))
-	nsMeasurement.rttMin = min
-	nsMeasurement.rttMax = max
+	nsMeasurement.rttAvg = time.Duration(total / time.Duration(len(entry.rtt)))
+	nsMeasurement.rttMin = time.Duration(min)
+	nsMeasurement.rttMax = time.Duration(max)
 	return nsMeasurement
 }
 

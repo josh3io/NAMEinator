@@ -1,6 +1,7 @@
 package main
 
 import (
+  "time"
 	"flag"
 	"fmt"
 	"github.com/miekg/dns"
@@ -14,11 +15,21 @@ import (
 var VERSION = "custom"
 var appConfiguration APPconfig
 
+type SortType string
+const (
+  min SortType ="min"
+  max SortType ="max"
+  avg SortType ="avg"
+  med SortType ="median"
+)
+
 type APPconfig struct {
 	numberOfDomains int
 	debug           bool
 	contest         bool
 	nameserver      string
+  showPercentiles bool
+  sortType        SortType
 }
 
 // process flags
@@ -28,11 +39,15 @@ func processFlags() {
 	flagNameserver := flag.String("nameserver", "", "specify a nameserver instead of using defaults")
 	flagContest := flag.Bool("contest", true, "contest=true/false : enable or disable a contest against your locally configured DNS server (default true)")
 	flagDebug := flag.Bool("debug", false, "debug=true/false : enable or disable debugging (default false)")
+  flagFullPercentilesTable := flag.Bool("percentiles", false, "percentiles=true/false : show percentiles table")
+  flagSort := flag.String("sort", "median", "sort=(min|max|avg|median)")
 	flag.Parse()
 	appConfigstruct.numberOfDomains = *flagNumberOfDomains
 	appConfigstruct.debug = *flagDebug
 	appConfigstruct.contest = *flagContest
 	appConfigstruct.nameserver = *flagNameserver
+  appConfigstruct.showPercentiles = *flagFullPercentilesTable
+  appConfigstruct.sortType = SortType(*flagSort)
 	appConfiguration = appConfigstruct
 }
 
@@ -76,20 +91,29 @@ func printWelcome() {
 	fmt.Println("-------------")
 }
 
+func sortKey(info NSinfo) time.Duration {
+  switch appConfiguration.sortType {
+    case min: return info.rttMin
+    case max: return info.rttMax
+    case avg: return info.rttAvg
+    case med: return info.percentiles[50]
+    default: return info.rttAvg
+  }
+}
+
 func processResults(nsStore nsInfoMap) []NSinfo {
 	nsStore.mutex.Lock()
 	defer nsStore.mutex.Unlock()
 	var nsStoreSorted []NSinfo
 	for _, entry := range nsStore.ns {
 		nsResults := nsStoreGetMeasurement(nsStore, entry.IPAddr)
-    entry.rtt95  = nsResults.rtt95
-    entry.rttMed = nsResults.rttMed
+    entry.percentiles = nsResults.percentiles
 		entry.rttAvg = nsResults.rttAvg
 		entry.rttMin = nsResults.rttMin
 		entry.rttMax = nsResults.rttMax
-		entry.ID = int64(nsResults.rtt95)
+		entry.ID = int64(sortKey(nsResults))
 		nsStore.ns[entry.IPAddr] = entry
-		nsStoreSorted = append(nsStoreSorted, NSinfo{entry.IPAddr, entry.Name, entry.Country, entry.Count, entry.ErrorsConnection, entry.ErrorsValidation, entry.ID, entry.rtt, entry.rtt95, entry.rttMed, entry.rttAvg, entry.rttMin, entry.rttMax})
+		nsStoreSorted = append(nsStoreSorted, NSinfo{entry.IPAddr, entry.Name, entry.Country, entry.Count, entry.ErrorsConnection, entry.ErrorsValidation, entry.ID, entry.rtt, entry.rttAvg, entry.rttMin, entry.rttMax, entry.percentiles})
 	}
 	sort.Slice(nsStoreSorted, func(i, j int) bool {
 		return nsStoreSorted[i].ID < nsStoreSorted[j].ID
@@ -105,7 +129,14 @@ func printResults(nsStore nsInfoMap, nsStoreSorted []NSinfo) {
 	for _, nameserver := range nsStoreSorted {
 		fmt.Println("")
 		fmt.Println(nameserver.IPAddr + ": ")
-		fmt.Printf("95th [%v], Med. [%v], Avg. [%v], Min. [%v], Max. [%v] ", nameserver.rtt95, nameserver.rttMed, nameserver.rttAvg, nameserver.rttMin, nameserver.rttMax)
+
+		fmt.Printf("Min. [%v], Avg. [%v], Med. [%v], 95%% [%v], Max. [%v]\n", nameserver.rttMin, nameserver.rttAvg, nameserver.percentiles[50], nameserver.percentiles[95], nameserver.rttMax)
+
+    if appConfiguration.showPercentiles {
+      for _,v := range([]int{10,25,50,75,90,95,99}) {
+        fmt.Printf("%d%%:  %s\n", v, nameserver.percentiles[v].String())
+      }
+    }
 		if appConfiguration.debug {
 			fmt.Println(nsStoreGetRecord(nsStore, nameserver.IPAddr))
 		}

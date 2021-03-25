@@ -7,6 +7,7 @@ import (
 	"io"
 	"math/rand"
 	"os"
+  "strings"
 	"time"
 )
 
@@ -49,6 +50,9 @@ func readNameserversFromFile(nsStore nsInfoMap, filename string) {
 			break
 		}
 		// fmt.Println(line)
+    if strings.HasPrefix(line[0],"//") {
+      continue
+    }
 		nsStoreAddNS(nsStore, line[0], line[1], line[2])
 		_ = err
 	}
