@@ -49,7 +49,7 @@ Usage of C:\Users\Administrator\go\src\NAMEinator\NAMEinator.exe:
         specify a nameserver instead of using defaults
   -sort string
         specify how to sort nameserver results: [min|max|avg|median] (default avg.)
-  -percentiles
+  -percentiles=true
         show a table for each nameserver with 10th, 25th, 50th, 75th, 95th, and 99th percentile results (default false)
 ```
 
