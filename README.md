@@ -47,6 +47,10 @@ Usage of C:\Users\Administrator\go\src\NAMEinator\NAMEinator.exe:
         number of domains to be tested (default 100)
   -nameserver string
         specify a nameserver instead of using defaults
+  -sort string
+        specify how to sort nameserver results: [min|max|avg|median] (default avg.)
+  -percentiles
+        show a table for each nameserver with 10th, 25th, 50th, 75th, 95th, and 99th percentile results (default false)
 ```
 
 sample output of current version (debug off)
@@ -66,23 +70,24 @@ LETS GO - each dot is a completed domain request against all nameservers
 ....................................................................................................
 finished - presenting results:
 
-172.31.0.2:
-Avg. [60.109104ms], Min. [313.4µs], Max. [899.4558ms]
-
-8.8.8.8:
-Avg. [46.839882ms], Min. [266.8µs], Max. [1.3698924s]
 
 8.8.4.4:
 Avg. [38.543425ms], Min. [409.2µs], Max. [555.3005ms]
 
+8.8.8.8:
+Avg. [46.839882ms], Min. [266.8µs], Max. [1.3698924s]
+
 208.67.222.222:
 Avg. [48.621088ms], Min. [217.6µs], Max. [614.7506ms]
 
-2001:470:20::2:
-Avg. [82.29074ms], Min. [280.1µs], Max. [1.7591384s]
-
 156.154.71.1:
 Avg. [56.059446ms], Min. [269.4µs], Max. [1.2002193s]
+
+172.31.0.2:
+Avg. [60.109104ms], Min. [313.4µs], Max. [899.4558ms]
+
+2001:470:20::2:
+Avg. [82.29074ms], Min. [280.1µs], Max. [1.7591384s]
 
 216.146.35.35:
 Avg. [93.600686ms], Min. [441.6µs], Max. [664.3157ms]
